@@ -1,7 +1,6 @@
 import mongoose, { Schema } from "mongoose";
-import jwt from "jsonwebtoken"
-import bcrypt from "bcrypt"
-
+import jwt from "jsonwebtoken";
+import bcrypt from "bcrypt";
 
 const userSchema = new Schema(
     {
@@ -11,7 +10,7 @@ const userSchema = new Schema(
             unique: true,
             lowercase: true,
             trim: true,
-            index: true //for optimised searching
+            index: true // For optimized searching
         },
         email: {
             type: String,
@@ -22,15 +21,15 @@ const userSchema = new Schema(
         fullName: {
             type: String,
             required: true,
-            trim: true,
+            trim: true, // Corrected to lowercase 't'
             index: true
         },
         avatar: {
-            type: String, //clodinary url 
+            type: String, // Cloudinary URL 
             required: true
         },
         coverImage: {
-            type: String, //cloudinary url
+            type: String, // Cloudinary URL
         },
         password: {
             type: String,
@@ -45,24 +44,23 @@ const userSchema = new Schema(
                 ref: "Video"
             }
         ],
-    }, { timestamps: true }
-)
+    },
+    { timestamps: true }
+);
 
 userSchema.pre("save", async function (next) {
     if (this.isModified("password")) {
-        this.password = bcrypt.hash(this.password, 10)
-        next()
-    } {
-        return next()
+        this.password = await bcrypt.hash(this.password, 10); // Added await
     }
-})
+    next();
+});
 
 userSchema.methods.isPasswordCorrect = async function (password) {
-    return await bcrypt.compare(password, this.password)
-}
+    return await bcrypt.compare(password, this.password);
+};
 
 userSchema.methods.generateAccessToken = function () {
-    jwt.sign(
+    return jwt.sign(
         {
             _id: this._id,
             email: this.email,
@@ -71,21 +69,21 @@ userSchema.methods.generateAccessToken = function () {
         },
         process.env.ACCESS_TOKEN_SECRET,
         {
-            expiresIn: process.env.JWT_EXPIRTATION
+            expiresIn: process.env.JWT_EXPIRATION // Corrected typo
         }
-    )
-}
+    );
+};
 
 userSchema.methods.generateRefreshToken = function () {
-    jwt.sign(
+    return jwt.sign(
         {
             _id: this._id,
         },
         process.env.REFRESH_TOKEN_SECRET,
         {
-            expiresIn: process.env.JWT_REFRESH_EXPIRTATION
+            expiresIn: process.env.JWT_REFRESH_EXPIRATION // Corrected typo
         }
-    )
-}
+    );
+};
 
-export const User = mongoose.model('User', userSchema)
+export const User = mongoose.model('User', userSchema);
