@@ -15,9 +15,14 @@ const registerUser = asyncHandler(async (req, res) => {
     }
 
     //chcecking the user already exists or not 
-    User.findOne({
+    const existedUser = User.findOne({
         $or: [{ username }, { email }]
-    })
+    }) // it will return the first document found with the same username or email
+    if (existedUser) {
+        throw new errorHandler(409, "User already exists")
+    }
+
+
 
 
 })
