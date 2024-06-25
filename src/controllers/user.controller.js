@@ -2,6 +2,7 @@ import asyncHandler from "../utils/asyncHandler.js"
 import errorHandler from "../utils/errorHandler.js"
 import { User } from "../models/user.model.js"
 import uploadMethod from "../utils/cloudinary.fileUpload.js"
+import responseHandler from "../utils/responseHandler.js"
 
 const registerUser = asyncHandler(async (req, res) => {
 
@@ -49,15 +50,39 @@ const registerUser = asyncHandler(async (req, res) => {
         password,
     })
 
-    const createdUser = await User.findById(user._id)
+    const createdUser = await User.findById(user._id).select(
+        "-password -refreshToken" //remove password and refreshToken
+    )
 
-    // remove the password and refresh token field from response
+    if (!createdUser) {
+        throw new errorHandler(500, "User creation failed")
+    }
+
+    // return response
+    return res.status(201).json(
+        new responseHandler(
+            200,
+            createdUser,
+            "User created successfully",
+        ))
 
 
 })
 
 export default registerUser
 
+
+
+
+
+
+
+
+
+
+
+
+//ALGORITHM : 
 
 // user gives the data from frontend {correct} // done
 // data validation is required {correct} //done
