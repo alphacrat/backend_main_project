@@ -22,6 +22,14 @@ const registerUser = asyncHandler(async (req, res) => {
         throw new errorHandler(409, "User already exists")
     }
 
+    //check for images and avatar
+    const avatarLocalPath = req.files?.avatar[0]?.path;
+    const coverImageLocalPath = req.files?.coverImage[0]?.path;
+
+    if (!avatarLocalPath) {
+        throw new errorHandler(400, "Avatar is required")
+    }
+
 
 
 
@@ -31,9 +39,9 @@ export default registerUser
 
 
 // user gives the data from frontend {correct} // done
-// data validation is required {correct}
-// chcek if user already exists {not thuoght of} : we check through email
-// check for images and avatar {compulsory check not thought of}
+// data validation is required {correct} //done
+// chcek if user already exists {not thuoght of} : we check through email //done
+// check for images and avatar {compulsory check for the avatar not thought of}
 // upload to cloudinary 
 // check the avatar if uploaded in multer and cloudinary
 // create user Object - create DB call
