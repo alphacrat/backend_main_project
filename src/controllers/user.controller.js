@@ -1,5 +1,6 @@
 import asyncHandler from "../utils/asyncHandler.js"
 import errorHandler from "../utils/errorHandler.js"
+import { User } from "../models/user.model.js"
 
 const registerUser = asyncHandler(async (req, res) => {
 
@@ -12,6 +13,11 @@ const registerUser = asyncHandler(async (req, res) => {
     if ([fullName, email, username, password].some((field) => { field?.trim() === "" })) {
         throw new errorHandler(400, "All fields required")
     }
+
+    //chcecking the user already exists or not 
+    User.findOne({
+        $or: [{ username }, { email }]
+    })
 
 
 })
