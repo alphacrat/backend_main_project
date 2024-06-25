@@ -39,6 +39,21 @@ const registerUser = asyncHandler(async (req, res) => {
         throw new errorHandler(500, "Avatar upload failed")
     }
 
+    // create user Object - create DB call
+    const user = await User.create({
+        fullName,
+        avatar: avatarResponse.url,
+        coverImage: coverImageResponse?.url || "", // here this is not sure that the user had uploaded the coverimage 
+        email,
+        username: username.toLowerCase(),
+        password,
+    })
+
+    const createdUser = await User.findById(user._id)
+
+    // remove the password and refresh token field from response
+
+
 })
 
 export default registerUser
