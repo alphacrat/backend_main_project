@@ -1,6 +1,7 @@
 import asyncHandler from "../utils/asyncHandler.js"
 import errorHandler from "../utils/errorHandler.js"
 import { User } from "../models/user.model.js"
+import uploadMethod from "../utils/cloudinary.fileUpload.js"
 
 const registerUser = asyncHandler(async (req, res) => {
 
@@ -30,8 +31,13 @@ const registerUser = asyncHandler(async (req, res) => {
         throw new errorHandler(400, "Avatar is required")
     }
 
+    //upload in cloudinary : 
+    const avatarResponse = await uploadMethod(avatarLocalPath)
+    const coverImageResponse = await uploadMethod(coverImageLocalPath)
 
-
+    if (!avatarResponse) {
+        throw new errorHandler(500, "Avatar upload failed")
+    }
 
 })
 
