@@ -4,6 +4,22 @@ import { User } from "../models/user.model.js"
 import uploadMethod from "../utils/cloudinary.fileUpload.js"
 import responseHandler from "../utils/responseHandler.js"
 
+
+const generateAccessAndReferenceTokens = async (userId) => {
+    try {
+        const user = await User.findById(userId);
+        const accessToken = user.generateAccessToken()
+        const refreshToken = user.generateRefreshToken()
+
+        user.refreshToken = refreshToken;
+        await user.save({ validateBeforeSave: false })
+
+        return { accessToken, refreshToken }
+    } catch (err) {
+        throw new errorHandler(500, "server method problem", err)
+    }
+}
+
 const registerUser = asyncHandler(async (req, res) => {
 
     //user gives the data in the frontend and the data is retrieved here 
@@ -69,7 +85,64 @@ const registerUser = asyncHandler(async (req, res) => {
             "User created successfully",
         ))
 })
-export default registerUser
+
+
+const loginUser = asyncHandler(async (req, res,) => {
+
+    // values are taken from the body
+    const { email, username, password } = req.body
+
+    //validation if the user has provided the sufficient dta for the login 
+    if (!username || !email) {
+        throw new errorHandler(400, "username or email required")
+    }
+
+    //checking the user already exists or not
+    const user = await User.findOne({
+        $or: [{ username }, { email }] //this checks that a user exists with any of the value 
+    })
+
+    if (!user) {
+        throw new errorHandler(404, "user doesnot exist")
+    }
+
+    //password check
+    const idPasswordValid = await user.isPasswordCorrect(password);
+    if (!idPasswordValid) {
+        throw new errorHandler(401, "Invalid user credentials")
+    }
+
+    //generate refresh token and the access token
+    const { accesstoken, refreshtoken } = await generateAccessAndReferenceTokens(user._id)
+
+    const loggedInUser = await User.findById(user._id).select("-password -refreshToken")
+
+    const options = {
+        httpOnly: true,
+        secure: true
+    }
+
+    res.status(200)
+        .cookie("accessToken", accessToken, options)
+        .cookie("refreshToken", refreshToken, options)
+        .json(
+            new responseHandler(
+                200,
+                {
+                    user: loggedInUser,
+                    accesstoken,
+                    refreshtoken
+                },
+                "User Logged in Successfully!!"))
+    //send it in cookies 
+
+})
+
+
+const logoutUser = asyncHandler(async (req, res) => {
+
+})
+export { registerUser, loginUser }
 
 
 
@@ -82,7 +155,7 @@ export default registerUser
 
 
 
-//ALGORITHM : 
+//ALGORITHM for signup : 
 
 // user gives the data from frontend {correct} // done
 // data validation is required {correct} //done
@@ -94,3 +167,15 @@ export default registerUser
 // remove the password and refresh token field from response 
 // check if response recieved, user creation validation
 // return response
+
+
+//algorithm for login 
+/*
+1. user provide the login credentials (req.body -> data)
+2. validation 
+3. chcek in the db, if user exits (username or email)
+4. password check
+4. give the accesstoken and the refreshtoken 
+5. send the accesstoken and the refreshtoken in secure cookies 
+5, prompt successful login 
+*/
