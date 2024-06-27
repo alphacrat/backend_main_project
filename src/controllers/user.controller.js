@@ -8,8 +8,6 @@ const registerUser = asyncHandler(async (req, res) => {
 
     //user gives the data in the frontend and the data is retrieved here 
     const { fullName, email, username, password } = req.body
-    console.log("email : ", email);
-    console.log("Fullname : ", fullName);
 
     //data validation
     if ([fullName, email, username, password].some((field) => { field?.trim() === "" })) {
@@ -17,7 +15,7 @@ const registerUser = asyncHandler(async (req, res) => {
     }
 
     //chcecking the user already exists or not 
-    const existedUser = User.findOne({
+    const existedUser = await User.findOne({
         $or: [{ username }, { email }]
     }) // it will return the first document found with the same username or email
     if (existedUser) {
@@ -26,10 +24,15 @@ const registerUser = asyncHandler(async (req, res) => {
 
     //check for images and avatar
     const avatarLocalPath = req.files?.avatar[0]?.path;
-    const coverImageLocalPath = req.files?.coverImage[0]?.path;
-
     if (!avatarLocalPath) {
         throw new errorHandler(400, "Avatar is required")
+    }
+
+    let coverImageLocalPath;
+    if (req.files && Array.isArray(req.files.coverImage) && req.files.coverImage.length > 0) {
+        coverImageLocalPath = req.files?.coverImage[0]?.path;
+    } else {
+        console.log("Warning: There is no cover image");
     }
 
     //upload in cloudinary : 
@@ -65,10 +68,7 @@ const registerUser = asyncHandler(async (req, res) => {
             createdUser,
             "User created successfully",
         ))
-
-
 })
-
 export default registerUser
 
 
