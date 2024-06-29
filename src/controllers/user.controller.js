@@ -122,6 +122,9 @@ const loginUser = asyncHandler(async (req, res,) => {
         secure: true
     }
 
+    const accessToken = user.generateAccessToken()
+    const refreshToken = user.generateRefreshToken()
+
     res.status(200)
         .cookie("accessToken", accessToken, options)
         .cookie("refreshToken", refreshToken, options)
