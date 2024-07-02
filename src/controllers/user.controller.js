@@ -3,7 +3,7 @@ import errorHandler from "../utils/errorHandler.js"
 import { User } from "../models/user.model.js"
 import uploadMethod from "../utils/cloudinary.fileUpload.js"
 import responseHandler from "../utils/responseHandler.js"
-
+import jwt from "jsonwebtoken"
 
 const generateAccessAndReferenceTokens = async (userId) => {
     try {
@@ -164,6 +164,28 @@ const logoutUser = asyncHandler(async (req, res) => {
         .clearCookie("accessToken", options)
         .clearCookie("refreshToken", options)
         .json(new responseHandler(200, null, "User logged out successfully"))
+})
+
+const refreshAccessTokem = asyncHandler(async (req, res) => {
+
+    const incomingRefreshToken = req.cookies.refreshToken || req.body.refreshToken
+
+    if (incomingRefreshToken) {
+        throw new errorHandler(401, "unauthorised request")
+    }
+
+    const decode = jwt.verify(
+        incomingRefreshToken,
+        process.env.REFRESH_TOKEN_SECRET
+    )
+
+    const user = User.findById(decodedToken?._id)
+
+    if (!user) {
+
+    }
+
+
 })
 export { registerUser, loginUser, logoutUser }
 
