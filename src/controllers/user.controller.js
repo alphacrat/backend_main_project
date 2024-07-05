@@ -166,28 +166,55 @@ const logoutUser = asyncHandler(async (req, res) => {
         .json(new responseHandler(200, null, "User logged out successfully"))
 })
 
-const refreshAccessTokem = asyncHandler(async (req, res) => {
+try {
+    const refreshAccessToken = asyncHandler(async (req, res) => {
 
-    const incomingRefreshToken = req.cookies.refreshToken || req.body.refreshToken
+        const incomingRefreshToken = req.cookies.refreshToken || req.body.refreshToken
 
-    if (incomingRefreshToken) {
-        throw new errorHandler(401, "unauthorised request")
-    }
+        if (incomingRefreshToken) {
+            throw new errorHandler(401, "unauthorised request")
+        }
 
-    const decode = jwt.verify(
-        incomingRefreshToken,
-        process.env.REFRESH_TOKEN_SECRET
-    )
+        const decodedToken = jwt.verify(
+            incomingRefreshToken,
+            process.env.REFRESH_TOKEN_SECRET
+        )
 
-    const user = User.findById(decodedToken?._id)
+        const user = await User.findById(decodedToken?._id)
 
-    if (!user) {
+        if (!user) {
+            throw new errorHandler(401, "Invallid Refresh Token")
+        }
 
-    }
+        if (incomingRefreshToken !== user?.refreshToken) {
+            throw new errorHandler(401, "refreshtoken is used or expired")
+        }
+
+        const options = {
+            httpOnly: true,
+            secure: true
+        }
+
+        const { newAccessToken, newRefreshToken } = await generateAccessAndReferenceTokens(user._id)
+
+        return res
+            .status(200)
+            .cookie("accessToken", newAccessToken, options)
+            .cookie("refreshToken", newRefreshToken, options)
+            .json(
+                new responseHandler(
+                    200,
+                    { accessToken: newAccessToken, refreshToken: newRefreshToken },
+                    "the accessToken is successfully generated")
+            )
 
 
-})
-export { registerUser, loginUser, logoutUser }
+    })
+} catch (error) {
+    throw new errorHandler(401, error?.message || "unauthorised request")
+}
+export { registerUser, loginUser, logoutUser, refreshAccessToken }
+
 
 
 
@@ -217,10 +244,21 @@ export { registerUser, loginUser, logoutUser }
 //algorithm for login 
 /*
 1. user provide the login credentials (req.body -> data)
-2. validation 
+2. validation
 3. chcek in the db, if user exits (username or email)
 4. password check
-4. give the accesstoken and the refreshtoken 
-5. send the accesstoken and the refreshtoken in secure cookies 
-5, prompt successful login 
+4. give the accesstoken and the refreshtoken
+5. send the accesstoken and the refreshtoken in secure cookies
+5, prompt successful login
 */
+
+
+// algorithm : 
+// user provides more in the login section to make up with the basic prowess 
+// user provides the email and password
+// check if the user exists
+// password check
+// return the accesstoken and refreshtoken
+// send the accesstoken and refreshtoken in secure cookies
+// prompt successful login
+// the successful login is then verified in th ecookies sectoin of the upwork 
