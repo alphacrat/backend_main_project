@@ -171,7 +171,7 @@ try {
 
         const incomingRefreshToken = req.cookies.refreshToken || req.body.refreshToken
 
-        if (incomingRefreshToken) {
+        if (!incomingRefreshToken) {
             throw new errorHandler(401, "unauthorised request")
         }
 
@@ -214,6 +214,9 @@ try {
     throw new errorHandler(401, error?.message || "unauthorised request")
 }
 export { registerUser, loginUser, logoutUser, refreshAccessToken }
+
+
+
 
 
 
