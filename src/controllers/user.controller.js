@@ -166,36 +166,40 @@ const logoutUser = asyncHandler(async (req, res) => {
         .json(new responseHandler(200, null, "User logged out successfully"))
 })
 
-try {
-    const refreshAccessToken = asyncHandler(async (req, res) => {
 
-        const incomingRefreshToken = req.cookies.refreshToken || req.body.refreshToken
+const refreshAccessToken = asyncHandler(async (req, res) => {
+    try {
+        const incomingRefreshToken = req.cookies.refreshToken || req.body.refreshToken;
 
         if (!incomingRefreshToken) {
-            throw new errorHandler(401, "unauthorised request")
+            throw new errorHandler(401, "Unauthorized request");
         }
 
         const decodedToken = jwt.verify(
             incomingRefreshToken,
             process.env.REFRESH_TOKEN_SECRET
-        )
+        );
 
-        const user = await User.findById(decodedToken?._id)
+        const user = await User.findById(decodedToken._id);
 
         if (!user) {
-            throw new errorHandler(401, "Invallid Refresh Token")
+            throw new errorHandler(401, "Invalid Refresh Token");
         }
 
-        if (incomingRefreshToken !== user?.refreshToken) {
-            throw new errorHandler(401, "refreshtoken is used or expired")
+        if (incomingRefreshToken !== user.refreshToken) {
+            throw new errorHandler(401, "Refresh token is used or expired");
         }
 
         const options = {
             httpOnly: true,
-            secure: true
-        }
+            secure: true,
+            // sameSite: 'Strict' // Optional but recommended for added security
+        };
 
-        const { newAccessToken, newRefreshToken } = await generateAccessAndReferenceTokens(user._id)
+        const { newAccessToken, newRefreshToken } = await generateAccessAndReferenceTokens(user._id);
+
+        user.refreshToken = newRefreshToken; // Update the refresh token in the user's record
+        await user.save();
 
         return res
             .status(200)
@@ -205,15 +209,68 @@ try {
                 new responseHandler(
                     200,
                     { accessToken: newAccessToken, refreshToken: newRefreshToken },
-                    "the accessToken is successfully generated")
-            )
+                    "The access token is successfully generated"
+                )
+            );
+    } catch (error) {
+        throw new errorHandler(401, error.message || "Unauthorized request");
+    }
+})
 
 
-    })
-} catch (error) {
-    throw new errorHandler(401, error?.message || "unauthorised request")
-}
-export { registerUser, loginUser, logoutUser, refreshAccessToken }
+const changeCurrentPassword = asyncHandler(async (req, res) => {
+    try {
+        const { newPassword, oldPassword, confPassword } = req.body;
+
+        if (!newPassword || !oldPassword || !confPassword) {
+            throw new errorHandler(401, "inputs not recieved");
+        }
+
+        if (!(newPassword === confPassword)) {
+            throw new errorHandler(401, "New password and confirm password do not match");
+        }
+
+        const user = await User.findById(req.user?._id);
+
+        if (!user) {
+            throw new errorHandler(401, "user not found")
+        }
+
+        const isOldPasswordCorrect = await user.isPasswordCorrect(oldPassword);
+
+        if (!isOldPasswordCorrect) {
+            throw new errorHandler(401, "Invalid Old Password");
+        }
+
+        user.password = newPassword; // password is set, not saved
+        await user.save({ validateBeforeSave: false })
+
+        return res
+            .status(200)
+            .json(new responseHandler(200, {}, "Password changed successfully"))
+    } catch (error) {
+        throw new errorHandler(401, error.message || "Unsuccessful Password Change")
+    }
+})
+
+const getCurrentUser = asyncHandler(async (req, res) => {
+    const userID = req.user?._id;
+
+    if (!userID) {
+        throw new errorHandler(401, "User not found");
+    }
+
+    const user = await User.findById(userID);
+    if (!user) {
+        throw new errorHandler(404, "User not found");
+    }
+
+    return res.status(200).json(new responseHandler(200, { user }, "User retrieved successfully"));
+});
+
+
+
+export { registerUser, loginUser, logoutUser, refreshAccessToken, changeCurrentPassword, getCurrentUser }
 
 
 
