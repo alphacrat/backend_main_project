@@ -268,7 +268,7 @@ const getCurrentUser = asyncHandler(async (req, res) => {
     return res.status(200).json(new responseHandler(200, { user }, "User retrieved successfully"));
 });
 
-
+const updateUserAvatar = asyncHandler(async(req, res))
 
 export { registerUser, loginUser, logoutUser, refreshAccessToken, changeCurrentPassword, getCurrentUser }
 
